@@ -35,8 +35,8 @@ opt_build_dagster_version = click.option(
 opt_build_platform = click.option(
     "--platform",
     required=False,
-    default="linux/amd64",
-    help="Target platform name to pass to `docker build`",
+    default=None,
+    help="Target platform name to pass to `docker build` (e.g., linux/amd64, linux/arm64, or linux/amd64,linux/arm64 for multi-platform)",
 )
 opt_build_timestamp = click.option(
     "-t",
