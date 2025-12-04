@@ -12,14 +12,43 @@ def execute_docker_build(
     docker_args: Optional[dict[str, str]] = None,
     cwd: Optional[str] = None,
     platform: Optional[str] = None,
+    push: bool = False,
 ):
+    """Build a Docker image, optionally for multiple platforms using buildx.
+
+    Args:
+        image: Image name and tag
+        docker_args: Build arguments to pass to docker build
+        cwd: Working directory for the build
+        platform: Target platform(s). Can be a single platform (e.g., "linux/amd64")
+            or multiple platforms separated by commas (e.g., "linux/amd64,linux/arm64").
+            When multiple platforms are specified, buildx is used automatically.
+        push: Whether to push the image after building (required for multi-platform builds)
+    """
     check.str_param(image, "image")
     docker_args = check.opt_dict_param(docker_args, "docker_args", key_type=str, value_type=str)
     cwd = check.opt_str_param(cwd, "cwd")
 
     print(f"Building image {image}")
 
-    args = ["docker", "build", "."]
+    # Determine if we need to use buildx for multi-platform builds
+    use_buildx = platform and "," in platform
+
+    if use_buildx:
+        # Multi-platform build requires buildx
+        args = ["docker", "buildx", "build", "."]
+        # Multi-platform builds require either --push or --load
+        # Since we can't load multi-platform images, we need to push them
+        if push:
+            args += ["--push"]
+        else:
+            print(
+                "Warning: Multi-platform builds typically require --push. "
+                "Image will be built but may not be loadable to local Docker."
+            )
+    else:
+        # Single platform or no platform specified - use regular docker build
+        args = ["docker", "build", "."]
 
     for arg, value in docker_args.items():
         args += ["--build-arg", f"{arg}={value}"]
