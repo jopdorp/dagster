@@ -41,10 +41,12 @@ ENV LANG=en_US.UTF-8 \
     FOSSA_VERSION=1.1.10
 
 # Install Kubernetes tools: kubectl, kind, helm
-RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl" \
+# Detect architecture for binaries
+RUN ARCH=$(dpkg --print-architecture) \
+    && curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/${ARCH}/kubectl" \
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/local/bin/kubectl \
-    && curl -L "https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/kind-linux-amd64" -o ./kind \
+    && curl -L "https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/kind-linux-${ARCH}" -o ./kind \
     && chmod +x ./kind \
     && mv ./kind /usr/local/bin/kind \
     && curl "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3" | bash
@@ -98,11 +100,12 @@ RUN curl -sL https://deb.nodesource.com/setup_21.x | bash - \
 
 # Install FOSSA cli for analyzing our open-source dependencies
 # https://github.com/fossas/fossa-cli
-RUN wget https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}/fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz \
-    && tar xvzf fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz fossa \
+RUN ARCH=$(dpkg --print-architecture) \
+    && wget https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}/fossa-cli_${FOSSA_VERSION}_linux_${ARCH}.tar.gz \
+    && tar xvzf fossa-cli_${FOSSA_VERSION}_linux_${ARCH}.tar.gz fossa \
     && chmod +x ./fossa \
     && mv ./fossa /usr/local/bin/fossa \
-    && rm fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz \
+    && rm fossa-cli_${FOSSA_VERSION}_linux_${ARCH}.tar.gz \
     && fossa --version
 
 # Install Google Cloud SDK
@@ -120,9 +123,10 @@ RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyri
 # plugin. Eventually we should update the code using `docker-compose` and then we can just use the
 # CLI plugin.
 # See: https://docs.docker.com/engine/install/debian/
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | \
+RUN ARCH=$(dpkg --print-architecture) \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | \
     gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
+    && echo "deb [arch=${ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
     tee -a /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt-get -yqq update \
     && apt-get -yqq install \
@@ -141,10 +145,11 @@ RUN wget http://download.redis.io/redis-stable.tar.gz \
     && make install
 
 # Install the DuckDB CLI
-RUN curl --fail --silent --show-error --location \
-    --output duckdb_cli-linux-amd64.zip \
-    https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip \
-    && unzip duckdb_cli-linux-amd64.zip \
+RUN ARCH=$(dpkg --print-architecture) \
+    && curl --fail --silent --show-error --location \
+    --output duckdb_cli-linux-${ARCH}.zip \
+    https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-${ARCH}.zip \
+    && unzip duckdb_cli-linux-${ARCH}.zip \
     && mv duckdb /usr/local/bin/duckdb \
     && chmod +x /usr/local/bin/duckdb
 
